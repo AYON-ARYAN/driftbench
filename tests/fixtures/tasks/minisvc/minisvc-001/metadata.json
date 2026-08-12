@@ -1,0 +1,7 @@
+{
+  "task_id": "minisvc-001",
+  "service": "minisvc",
+  "task_type": "add_pagination",
+  "difficulty": "easy",
+  "expected_drift_surface": ["D1", "D2", "D3"]
+}

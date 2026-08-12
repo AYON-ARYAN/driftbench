@@ -1,0 +1,11 @@
+{
+  "http-request": {
+    "method": "GET",
+    "path": "/albums",
+    "query": {"limit": "0"}
+  },
+  "http-response": {
+    "status": 400,
+    "body": {"error": "bad_request", "message": "limit out of range"}
+  }
+}

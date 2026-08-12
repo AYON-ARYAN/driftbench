@@ -74,14 +74,26 @@ def test_workspace_root_path_rejected(tmp_path):
         apply_patch(tmp_path, {".": "x"})
 
 
-def test_parses_spaced_path():
+def test_spaced_path_header_is_malformed():
     text = "### FILE: my file.py\n```python\nx = 1\n```\n"
-    assert parse_patch(text) == {"my file.py": "x = 1\n"}
+    parsed = parse_patch(text)
+    malformed = malformed_headers(text)
+    # Spaced path should not parse
+    assert "my file.py" not in parsed
+    # But the header should be detected as malformed
+    assert len(malformed) == 1
+    assert "my file.py" in malformed[0]
 
 
-def test_parses_spaced_deletion():
-    text = "### DELETE: my old file.py\n"
-    assert parse_patch(text) == {"my old file.py": None}
+def test_trailing_comment_header_is_malformed():
+    text = "### FILE: a.py  # new file\n```python\nx = 1\n```\n"
+    parsed = parse_patch(text)
+    malformed = malformed_headers(text)
+    # Header with trailing comment should not parse
+    assert "a.py" not in parsed
+    # The header should be detected as malformed
+    assert len(malformed) == 1
+    assert "a.py" in malformed[0]
 
 
 def test_malformed_headers_detects_unterminated_fence():

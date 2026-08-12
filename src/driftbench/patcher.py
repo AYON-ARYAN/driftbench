@@ -20,16 +20,16 @@ Rules:
 """
 
 _FILE_BLOCK = re.compile(
-    r"^### FILE:[ \t]*(?P<path>[^\r\n]+)[ \t]*\r?\n"
+    r"^### FILE:[ \t]*(?P<path>\S+)[ \t]*\r?\n"
     r"```[A-Za-z0-9_+-]*[ \t]*\r?\n"
     r"(?P<body>.*?)"
     r"\r?\n```[ \t]*(?:\r?\n|$)",
     re.MULTILINE | re.DOTALL,
 )
-_DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>[^\r\n]+)[ \t]*$", re.MULTILINE)
+_DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>\S+)[ \t]*$", re.MULTILINE)
 
-_MALFORMED_FILE_HEADER = re.compile(r"^### FILE:[ \t]*([^\r\n]+?)[ \t]*$", re.MULTILINE)
-_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:[ \t]*([^\r\n]+?)[ \t]*$", re.MULTILINE)
+_MALFORMED_FILE_HEADER = re.compile(r"^### FILE:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
+_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
 
 
 class PatchError(Exception):
@@ -39,9 +39,9 @@ class PatchError(Exception):
 def parse_patch(text: str) -> dict[str, str | None]:
     files: dict[str, str | None] = {}
     for match in _FILE_BLOCK.finditer(text):
-        files[match.group("path").strip()] = match.group("body") + "\n"
+        files[match.group("path")] = match.group("body") + "\n"
     for match in _DELETE_LINE.finditer(text):
-        files.setdefault(match.group("path").strip(), None)
+        files.setdefault(match.group("path"), None)
     return files
 
 
@@ -52,22 +52,46 @@ def malformed_headers(text: str) -> list[str]:
     did not properly format it or left it incomplete (missing closing fence, etc).
     Returns the raw header line text for each such malformed directive.
     """
-    parsed_files = {m.group("path").strip() for m in _FILE_BLOCK.finditer(text)}
-    parsed_deletes = {m.group("path").strip() for m in _DELETE_LINE.finditer(text)}
+    parsed_files = {m.group("path") for m in _FILE_BLOCK.finditer(text)}
+    parsed_deletes = {m.group("path") for m in _DELETE_LINE.finditer(text)}
 
     malformed = []
 
     # Check FILE headers for unmatched ones
     for match in _MALFORMED_FILE_HEADER.finditer(text):
-        path = match.group(1).strip()
-        if path and path not in parsed_files:
-            malformed.append(match.group(0))
+        header_content = match.group(1)
+        # Extract the first \S+ token (the path)
+        path_match = re.match(r"^(\S+)", header_content)
+        if path_match:
+            path = path_match.group(1)
+            # Header is malformed if:
+            # 1. The path is not in parsed files (no well-formed block found), OR
+            # 2. There's trailing text after the path (e.g., "a.py  # comment")
+            has_trailing_text = len(header_content.strip()) > len(path)
+            if path not in parsed_files or has_trailing_text:
+                malformed.append(match.group(0))
+        else:
+            # No valid path at all
+            if header_content.strip():
+                malformed.append(match.group(0))
 
     # Check DELETE headers for unmatched ones
     for match in _MALFORMED_DELETE_HEADER.finditer(text):
-        path = match.group(1).strip()
-        if path and path not in parsed_deletes:
-            malformed.append(match.group(0))
+        header_content = match.group(1)
+        # Extract the first \S+ token (the path)
+        path_match = re.match(r"^(\S+)", header_content)
+        if path_match:
+            path = path_match.group(1)
+            # Header is malformed if:
+            # 1. The path is not in parsed deletes (no well-formed block found), OR
+            # 2. There's trailing text after the path
+            has_trailing_text = len(header_content.strip()) > len(path)
+            if path not in parsed_deletes or has_trailing_text:
+                malformed.append(match.group(0))
+        else:
+            # No valid path at all
+            if header_content.strip():
+                malformed.append(match.group(0))
 
     return malformed
 

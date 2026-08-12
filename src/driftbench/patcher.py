@@ -20,13 +20,16 @@ Rules:
 """
 
 _FILE_BLOCK = re.compile(
-    r"^### FILE:[ \t]*(?P<path>\S+)[ \t]*\r?\n"
+    r"^### FILE:[ \t]*(?P<path>[^\r\n]+)[ \t]*\r?\n"
     r"```[A-Za-z0-9_+-]*[ \t]*\r?\n"
     r"(?P<body>.*?)"
     r"\r?\n```[ \t]*(?:\r?\n|$)",
     re.MULTILINE | re.DOTALL,
 )
-_DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>\S+)[ \t]*$", re.MULTILINE)
+_DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>[^\r\n]+)[ \t]*$", re.MULTILINE)
+
+_MALFORMED_FILE_HEADER = re.compile(r"^### FILE:[ \t]*([^\r\n]+?)[ \t]*$", re.MULTILINE)
+_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:[ \t]*([^\r\n]+?)[ \t]*$", re.MULTILINE)
 
 
 class PatchError(Exception):
@@ -36,18 +39,50 @@ class PatchError(Exception):
 def parse_patch(text: str) -> dict[str, str | None]:
     files: dict[str, str | None] = {}
     for match in _FILE_BLOCK.finditer(text):
-        files[match.group("path")] = match.group("body") + "\n"
+        files[match.group("path").strip()] = match.group("body") + "\n"
     for match in _DELETE_LINE.finditer(text):
-        files.setdefault(match.group("path"), None)
+        files.setdefault(match.group("path").strip(), None)
     return files
 
 
+def malformed_headers(text: str) -> list[str]:
+    """Return raw header lines that look like ### FILE: or ### DELETE: but don't parse.
+
+    This detects partial responses where a model started an instruction but
+    did not properly format it or left it incomplete (missing closing fence, etc).
+    Returns the raw header line text for each such malformed directive.
+    """
+    parsed_files = {m.group("path").strip() for m in _FILE_BLOCK.finditer(text)}
+    parsed_deletes = {m.group("path").strip() for m in _DELETE_LINE.finditer(text)}
+
+    malformed = []
+
+    # Check FILE headers for unmatched ones
+    for match in _MALFORMED_FILE_HEADER.finditer(text):
+        path = match.group(1).strip()
+        if path and path not in parsed_files:
+            malformed.append(match.group(0))
+
+    # Check DELETE headers for unmatched ones
+    for match in _MALFORMED_DELETE_HEADER.finditer(text):
+        path = match.group(1).strip()
+        if path and path not in parsed_deletes:
+            malformed.append(match.group(0))
+
+    return malformed
+
+
 def _resolve(workspace: Path, rel: str) -> Path:
+    if not rel or not rel.strip():
+        raise PatchError(f"empty path rejected: {rel!r}")
     if Path(rel).is_absolute():
         raise PatchError(f"absolute path rejected: {rel}")
     target = (workspace / rel).resolve()
-    if not target.is_relative_to(workspace.resolve()):
+    workspace_resolved = workspace.resolve()
+    if not target.is_relative_to(workspace_resolved):
         raise PatchError(f"path escapes workspace: {rel}")
+    if target == workspace_resolved:
+        raise PatchError(f"path is workspace root: {rel}")
     return target
 
 

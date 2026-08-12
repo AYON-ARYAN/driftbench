@@ -1,5 +1,5 @@
 import pytest
-from driftbench.patcher import parse_patch, apply_patch, PatchError, PATCH_FORMAT_INSTRUCTIONS
+from driftbench.patcher import parse_patch, apply_patch, PatchError, PATCH_FORMAT_INSTRUCTIONS, malformed_headers
 
 
 def test_parses_single_file():
@@ -57,3 +57,50 @@ def test_absolute_path_rejected(tmp_path):
 def test_format_instructions_show_both_markers():
     assert "### FILE:" in PATCH_FORMAT_INSTRUCTIONS
     assert "### DELETE:" in PATCH_FORMAT_INSTRUCTIONS
+
+
+def test_empty_string_path_rejected(tmp_path):
+    with pytest.raises(PatchError, match="empty"):
+        apply_patch(tmp_path, {"": "x"})
+
+
+def test_whitespace_only_path_rejected(tmp_path):
+    with pytest.raises(PatchError, match="empty"):
+        apply_patch(tmp_path, {"   ": "x"})
+
+
+def test_workspace_root_path_rejected(tmp_path):
+    with pytest.raises(PatchError, match="workspace root"):
+        apply_patch(tmp_path, {".": "x"})
+
+
+def test_parses_spaced_path():
+    text = "### FILE: my file.py\n```python\nx = 1\n```\n"
+    assert parse_patch(text) == {"my file.py": "x = 1\n"}
+
+
+def test_parses_spaced_deletion():
+    text = "### DELETE: my old file.py\n"
+    assert parse_patch(text) == {"my old file.py": None}
+
+
+def test_malformed_headers_detects_unterminated_fence():
+    text = "### FILE: missed.py\n```python\nx = 1\n"
+    headers = malformed_headers(text)
+    assert len(headers) == 1
+    assert "missed.py" in headers[0]
+
+
+def test_malformed_headers_empty_for_wellformed():
+    text = (
+        "### FILE: a.py\n```python\nA = 1\n```\n"
+        "### DELETE: old.py\n"
+    )
+    assert malformed_headers(text) == []
+
+
+def test_malformed_headers_detects_missing_block():
+    text = "### FILE: orphan.py\n### FILE: real.py\n```\nx\n```\n"
+    headers = malformed_headers(text)
+    assert len(headers) == 1
+    assert "orphan.py" in headers[0]

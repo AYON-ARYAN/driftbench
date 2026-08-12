@@ -26,10 +26,10 @@ _FILE_BLOCK = re.compile(
     r"\r?\n```[ \t]*(?:\r?\n|$)",
     re.MULTILINE | re.DOTALL,
 )
-_DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>\S+)[ \t]*$", re.MULTILINE)
+_DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>\S+)[ \t]*\r?$", re.MULTILINE)
 
 _MALFORMED_FILE_HEADER = re.compile(r"^### FILE:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
-_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
+_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:[ \t]*([^\r\n]+?)[ \t]*$", re.MULTILINE)
 
 
 class PatchError(Exception):

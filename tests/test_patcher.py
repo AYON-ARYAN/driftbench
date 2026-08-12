@@ -116,3 +116,31 @@ def test_malformed_headers_detects_missing_block():
     headers = malformed_headers(text)
     assert len(headers) == 1
     assert "orphan.py" in headers[0]
+
+
+def test_crlf_delete_parses_correctly():
+    text = "### DELETE: old.py\r\n"
+    parsed = parse_patch(text)
+    assert parsed == {"old.py": None}
+    assert malformed_headers(text) == []
+
+
+def test_crlf_multiblock_wellformed():
+    text = (
+        "### FILE: a.py\r\n```python\r\nA = 1\r\n```\r\n"
+        "### FILE: sub/b.py\r\n```\r\nB = 2\r\n```\r\n"
+        "### DELETE: old.py\r\n"
+    )
+    parsed = parse_patch(text)
+    assert parsed == {"a.py": "A = 1\n", "sub/b.py": "B = 2\n", "old.py": None}
+    assert malformed_headers(text) == []
+
+
+def test_lf_equivalents_still_work():
+    text = (
+        "### FILE: a.py\n```python\nA = 1\n```\n"
+        "### DELETE: old.py\n"
+    )
+    parsed = parse_patch(text)
+    assert parsed == {"a.py": "A = 1\n", "old.py": None}
+    assert malformed_headers(text) == []

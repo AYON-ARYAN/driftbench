@@ -37,14 +37,16 @@ def run_tests(
             env=full_env,
         )
     except subprocess.TimeoutExpired as exc:
+        # TimeoutExpired.stdout is bytes|None even with text=True; decode defensively
+        stdout_str = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
         return TestResult(
             passed=False,
             returncode=-2,
-            stdout=exc.stdout or "",
+            stdout=stdout_str,
             stderr=f"TIMEOUT after {timeout}s",
             timed_out=True,
         )
-    except (FileNotFoundError, PermissionError) as exc:
+    except (OSError, ValueError, IndexError) as exc:
         return TestResult(passed=False, returncode=-1, stdout="", stderr=str(exc), timed_out=False)
 
     return TestResult(

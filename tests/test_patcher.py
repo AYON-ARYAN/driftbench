@@ -144,3 +144,30 @@ def test_lf_equivalents_still_work():
     parsed = parse_patch(text)
     assert parsed == {"a.py": "A = 1\n", "old.py": None}
     assert malformed_headers(text) == []
+
+
+@pytest.mark.parametrize("eol", ["\r\n", "\n"], ids=["crlf", "lf"])
+def test_delete_header_trailing_comment_is_malformed(eol):
+    text = f"### DELETE: a.py  # gone{eol}"
+    assert parse_patch(text) == {}
+    malformed = malformed_headers(text)
+    assert len(malformed) == 1
+    assert "a.py" in malformed[0]
+
+
+@pytest.mark.parametrize("eol", ["\r\n", "\n"], ids=["crlf", "lf"])
+def test_delete_header_multi_token_path_is_malformed(eol):
+    text = f"### DELETE: a.py b.py{eol}"
+    assert parse_patch(text) == {}
+    malformed = malformed_headers(text)
+    assert len(malformed) == 1
+    assert "a.py b.py" in malformed[0]
+
+
+@pytest.mark.parametrize("eol", ["\r\n", "\n"], ids=["crlf", "lf"])
+def test_delete_header_empty_path_is_malformed(eol):
+    text = f"### DELETE:   {eol}"
+    assert parse_patch(text) == {}
+    malformed = malformed_headers(text)
+    assert len(malformed) == 1
+    assert malformed[0].startswith("### DELETE:")

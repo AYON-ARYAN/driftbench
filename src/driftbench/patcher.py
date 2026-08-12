@@ -28,8 +28,8 @@ _FILE_BLOCK = re.compile(
 )
 _DELETE_LINE = re.compile(r"^### DELETE:[ \t]*(?P<path>\S+)[ \t]*\r?$", re.MULTILINE)
 
-_MALFORMED_FILE_HEADER = re.compile(r"^### FILE:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
-_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:[ \t]*([^\r\n]+?)[ \t]*$", re.MULTILINE)
+_MALFORMED_FILE_HEADER = re.compile(r"^### FILE:([^\r\n]*)\r?$", re.MULTILINE)
+_MALFORMED_DELETE_HEADER = re.compile(r"^### DELETE:([^\r\n]*)\r?$", re.MULTILINE)
 
 
 class PatchError(Exception):
@@ -45,55 +45,44 @@ def parse_patch(text: str) -> dict[str, str | None]:
     return files
 
 
+def _unmatched_headers(pattern: re.Pattern[str], text: str, parsed_paths: set[str]) -> list[str]:
+    """Find header lines matching `pattern` that don't correspond to a parsed path.
+
+    A header line is malformed if it has no clean `\\S+` path token (empty,
+    whitespace-only, or a path followed by trailing text such as a comment
+    or a second token), or if its path token was never accepted by the
+    well-formed block/line regex (e.g. an unterminated fence).
+    """
+    malformed = []
+    for match in pattern.finditer(text):
+        header_content = match.group(1).strip()
+        path_match = re.match(r"^(\S+)", header_content)
+        if path_match is None:
+            # No non-whitespace path token at all (empty or whitespace-only).
+            malformed.append(match.group(0))
+            continue
+        path = path_match.group(1)
+        has_trailing_text = len(header_content) > len(path)
+        if path not in parsed_paths or has_trailing_text:
+            malformed.append(match.group(0))
+    return malformed
+
+
 def malformed_headers(text: str) -> list[str]:
     """Return raw header lines that look like ### FILE: or ### DELETE: but don't parse.
 
     This detects partial responses where a model started an instruction but
-    did not properly format it or left it incomplete (missing closing fence, etc).
-    Returns the raw header line text for each such malformed directive.
+    did not properly format it or left it incomplete (missing closing fence,
+    empty path, extra tokens after the path, etc). Returns the raw header
+    line text for each such malformed directive. Well-formed headers of
+    either line ending never appear here.
     """
     parsed_files = {m.group("path") for m in _FILE_BLOCK.finditer(text)}
     parsed_deletes = {m.group("path") for m in _DELETE_LINE.finditer(text)}
 
-    malformed = []
-
-    # Check FILE headers for unmatched ones
-    for match in _MALFORMED_FILE_HEADER.finditer(text):
-        header_content = match.group(1)
-        # Extract the first \S+ token (the path)
-        path_match = re.match(r"^(\S+)", header_content)
-        if path_match:
-            path = path_match.group(1)
-            # Header is malformed if:
-            # 1. The path is not in parsed files (no well-formed block found), OR
-            # 2. There's trailing text after the path (e.g., "a.py  # comment")
-            has_trailing_text = len(header_content.strip()) > len(path)
-            if path not in parsed_files or has_trailing_text:
-                malformed.append(match.group(0))
-        else:
-            # No valid path at all
-            if header_content.strip():
-                malformed.append(match.group(0))
-
-    # Check DELETE headers for unmatched ones
-    for match in _MALFORMED_DELETE_HEADER.finditer(text):
-        header_content = match.group(1)
-        # Extract the first \S+ token (the path)
-        path_match = re.match(r"^(\S+)", header_content)
-        if path_match:
-            path = path_match.group(1)
-            # Header is malformed if:
-            # 1. The path is not in parsed deletes (no well-formed block found), OR
-            # 2. There's trailing text after the path
-            has_trailing_text = len(header_content.strip()) > len(path)
-            if path not in parsed_deletes or has_trailing_text:
-                malformed.append(match.group(0))
-        else:
-            # No valid path at all
-            if header_content.strip():
-                malformed.append(match.group(0))
-
-    return malformed
+    return _unmatched_headers(_MALFORMED_FILE_HEADER, text, parsed_files) + _unmatched_headers(
+        _MALFORMED_DELETE_HEADER, text, parsed_deletes
+    )
 
 
 def _resolve(workspace: Path, rel: str) -> Path:

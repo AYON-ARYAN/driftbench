@@ -9,6 +9,18 @@ from seed import seed
 DB = Path(__file__).parent / "db" / "minisvc.db"
 app = Flask(__name__)
 
+ALLOWED_NEW_ALBUM_KEYS = {"title", "artist", "year"}
+
+
+@app.errorhandler(404)
+def handle_404(_e):
+    return jsonify({"error": "not_found", "message": "no such resource"}), 404
+
+
+@app.errorhandler(405)
+def handle_405(_e):
+    return jsonify({"error": "method_not_allowed", "message": "method not allowed"}), 405
+
 
 def _conn():
     conn = sqlite3.connect(DB)
@@ -44,6 +56,12 @@ def create_album():
     body = request.get_json(silent=True)
     if not isinstance(body, dict):
         return jsonify({"error": "bad_request", "message": "body must be an object"}), 400
+    extra_keys = set(body.keys()) - ALLOWED_NEW_ALBUM_KEYS
+    if extra_keys:
+        return jsonify({
+            "error": "bad_request",
+            "message": f"unexpected fields: {sorted(extra_keys)}",
+        }), 400
     title, artist, year = body.get("title"), body.get("artist"), body.get("year")
     if not isinstance(title, str) or not title:
         return jsonify({"error": "bad_request", "message": "title required"}), 400

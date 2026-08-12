@@ -41,3 +41,22 @@ def test_create_album(client):
 
 def test_create_album_rejects_bad_year(client):
     assert client.post("/albums", json={"title": "x", "artist": "y", "year": "nineteen"}).status_code == 400
+
+
+def test_create_album_rejects_extra_property(client):
+    resp = client.post(
+        "/albums",
+        json={"title": "x", "artist": "y", "year": 2020, "extra": "zzz"},
+    )
+    assert resp.status_code == 400
+    body = resp.get_json()
+    assert set(body.keys()) == {"error", "message"}
+    assert body["error"] == "bad_request"
+
+
+def test_get_album_non_integer_id_returns_json_404(client):
+    resp = client.get("/albums/abc")
+    assert resp.status_code == 404
+    assert resp.content_type.startswith("application/json")
+    body = resp.get_json()
+    assert set(body.keys()) == {"error", "message"}

@@ -1,7 +1,16 @@
 version: 3
-contracts:
-  - filePath: spec.yaml
-report:
-  formatters:
-    - type: ctrf
-    - type: html
+systemUnderTest:
+  service:
+    definitions:
+      - definition:
+          source:
+            filesystem:
+              directory: .
+          specs:
+            - spec.yaml
+specmatic:
+  governance:
+    report:
+      formats:
+        - ctrf
+        - html

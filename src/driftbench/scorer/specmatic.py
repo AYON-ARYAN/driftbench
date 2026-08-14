@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,13 +75,27 @@ def run_specmatic(
         return SpecmaticOutcome(ran=False, error=f"java or jar not found: {exc}")
 
     ctrf_files = sorted(report_dir.rglob("*ctrf*.json"))
-    if not ctrf_files:
+    report = None
+    if ctrf_files:
+        try:
+            report = json.loads(ctrf_files[-1].read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            return SpecmaticOutcome(ran=False, error=f"CTRF report unparseable: {exc}")
+    else:
+        # Fallback to index.html with embedded JSON (e.g. in older Specmatic like 2.48.0)
+        html_files = sorted(report_dir.rglob("index.html"))
+        if html_files:
+            text = html_files[-1].read_text(encoding="utf-8")
+            m = re.search(r"const report\s*=\s*(.*)", text)
+            if m:
+                json_str = m.group(1).rstrip(";").strip()
+                try:
+                    report = json.loads(json_str)
+                except json.JSONDecodeError as exc:
+                    return SpecmaticOutcome(ran=False, error=f"embedded CTRF report unparseable: {exc}")
+
+    if report is None:
         tail = (proc.stdout + proc.stderr)[-1500:]
         return SpecmaticOutcome(ran=False, error=f"no CTRF report produced; output tail:\n{tail}")
-
-    try:
-        report = json.loads(ctrf_files[-1].read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        return SpecmaticOutcome(ran=False, error=f"CTRF report unparseable: {exc}")
 
     return parse_ctrf(report)

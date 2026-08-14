@@ -1,0 +1,15 @@
+{
+  "http-request": {
+    "method": "GET",
+    "path": "/albums/1"
+  },
+  "http-response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "title": "Kind of Blue",
+      "artist": "Miles Davis",
+      "year": 1959
+    }
+  }
+}

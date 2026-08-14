@@ -35,6 +35,10 @@ _SHAPE_PATTERNS = (
     re.compile(r"Key named \"[^\"]+\" was unexpected", re.I),
     re.compile(r"Expected key named \"[^\"]+\" was missing", re.I),
     re.compile(r"Expected (string|number|boolean|integer|object|array), actual was", re.I),
+    # Support Specmatic 2.x standard output patterns
+    re.compile(r"Property \"[^\"]+\" in the response was not in the specification", re.I),
+    re.compile(r"Unknown property", re.I),
+    re.compile(r"Expected key \"[^\"]+\" was missing", re.I),
 )
 
 

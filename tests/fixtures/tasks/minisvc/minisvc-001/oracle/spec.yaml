@@ -29,7 +29,7 @@ paths:
   /albums/{album_id}:
     get:
       parameters:
-        - {name: album_id, in: path, required: true, schema: {type: integer}}
+        - {name: album_id, in: path, required: true, schema: {type: integer, example: 1}}
       responses:
         "200":
           content: {application/json: {schema: {$ref: "#/components/schemas/Album"}}}

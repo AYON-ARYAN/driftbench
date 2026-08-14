@@ -112,7 +112,8 @@ def run(config: RunConfig) -> int:
     providers: dict[str, object] = {}
     executed = 0
 
-    for key in todo:
+    for idx, key in enumerate(todo, start=1):
+        print(f"[{idx}/{len(todo)}] Running: {key.task_id} | Condition {key.condition} | Model {key.model_id} | Seed {key.seed} ...", flush=True)
         if key.model_id not in providers:
             try:
                 providers[key.model_id] = get_provider(key.model_id)
@@ -127,7 +128,9 @@ def run(config: RunConfig) -> int:
                 })
                 continue
 
-        journal.append(execute_one(key, by_id[key.task_id], config, providers[key.model_id]))
+        result_record = execute_one(key, by_id[key.task_id], config, providers[key.model_id])
+        journal.append(result_record)
         executed += 1
+        print(f"  Finished {key.task_id}! patch_applied={result_record['patch_applied']} tests_pass={result_record['tests_pass']} contract_pass={result_record['contract_pass']}", flush=True)
 
     return executed

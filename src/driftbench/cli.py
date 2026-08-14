@@ -24,8 +24,8 @@ def run(
     model: Annotated[list[str], typer.Option("--model", help="e.g. ollama:qwen2.5-coder:7b")] = None,
     condition: Annotated[list[str], typer.Option("--condition")] = None,
     seeds: Annotated[int, typer.Option("--seeds")] = 1,
-    boot: Annotated[str, typer.Option("--boot")] = "python app.py --port {port}",
-    test: Annotated[str, typer.Option("--test")] = "python -m pytest tests -q",
+    boot: Annotated[str, typer.Option("--boot")] = "python3 app.py --port {port}",
+    test: Annotated[str, typer.Option("--test")] = "python3 -m pytest tests -q",
 ) -> None:
     """Execute the pending run matrix, resuming from the journal."""
     if not model:

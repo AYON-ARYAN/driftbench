@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -57,13 +58,29 @@ def run_specmatic(
     report_dir = Path(report_dir)
     report_dir.mkdir(parents=True, exist_ok=True)
 
+    # Copy spec and config locally to report_dir to prevent JVM absolute path bugs on macOS/Linux
+    try:
+        shutil.copyfile(spec, report_dir / "spec.yaml")
+        shutil.copyfile(config, report_dir / "specmatic.yaml")
+    except Exception as exc:
+        return SpecmaticOutcome(ran=False, error=f"failed to copy spec/config files to report dir: {exc}")
+
+    local_examples = report_dir / "examples"
+    if examples is not None and Path(examples).is_dir():
+        try:
+            local_examples.mkdir(exist_ok=True)
+            for f in Path(examples).glob("*.json"):
+                shutil.copyfile(f, local_examples / f.name)
+        except Exception as exc:
+            return SpecmaticOutcome(ran=False, error=f"failed to copy examples files locally: {exc}")
+
     command = [
-        "java", "-jar", str(jar), "test", str(spec),
-        f"--config={config}",
+        "java", "-jar", str(jar), "test", "spec.yaml",
+        "--config=specmatic.yaml",
         f"--testBaseURL={base_url}",
     ]
-    if examples is not None and Path(examples).is_dir():
-        command.append(f"--examples={examples}")
+    if local_examples.is_dir() and any(local_examples.glob("*.json")):
+        command.append("--examples=examples")
 
     try:
         proc = subprocess.run(

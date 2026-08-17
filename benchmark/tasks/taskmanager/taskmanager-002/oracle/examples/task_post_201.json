@@ -1,0 +1,23 @@
+{
+  "http-request": {
+    "method": "POST",
+    "path": "/tasks",
+    "headers": {
+      "Authorization": "Bearer agent-secret-token"
+    },
+    "body": {
+      "title": "Secret task"
+    }
+  },
+  "http-response": {
+    "status": 201,
+    "body": {
+      "id": 3,
+      "title": "Secret task",
+      "description": null,
+      "status": "pending",
+      "assignee_id": null,
+      "due_date": null
+    }
+  }
+}

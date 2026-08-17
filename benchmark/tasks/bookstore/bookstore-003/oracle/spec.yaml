@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info: {title: bookstore, version: "1.0.0"}
+paths:
+  /books:
+    get:
+      parameters:
+        - {name: author, in: query, required: false, schema: {type: string}}
+      responses:
+        "200":
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Book"}}}}
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/NewBook"}}}
+      responses:
+        "201":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Book"}}}
+        "400":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /books/{book_id}:
+    get:
+      parameters:
+        - {name: book_id, in: path, required: true, schema: {type: integer, example: 1}}
+      responses:
+        "200":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Book"}}}
+        "404":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/NewOrder"}}}
+      responses:
+        "201":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Order"}}}
+        "400":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+components:
+  schemas:
+    Book:
+      type: object
+      required: [id, title, author, year, genre, stock]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        author: {type: string}
+        year: {type: integer}
+        genre: {type: string}
+        stock: {type: integer}
+    NewBook:
+      type: object
+      required: [title, author, year, genre, stock]
+      additionalProperties: false
+      properties:
+        title: {type: string}
+        author: {type: string}
+        year: {type: integer}
+        genre: {type: string}
+        stock: {type: integer}
+    Order:
+      type: object
+      required: [id, book_id, quantity]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        book_id: {type: integer}
+        quantity: {type: integer}
+    NewOrder:
+      type: object
+      required: [book_id, quantity]
+      additionalProperties: false
+      properties:
+        book_id: {type: integer}
+        quantity: {type: integer}
+    Error:
+      type: object
+      required: [error, message]
+      additionalProperties: false
+      properties:
+        error: {type: string}
+        message: {type: string}

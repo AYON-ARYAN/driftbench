@@ -1,0 +1,19 @@
+{
+  "task_id": "bookstore-001",
+  "service": "bookstore",
+  "task_type": "add_filter_param",
+  "difficulty": "easy",
+  "boot_command": [
+    "/Users/ayonaryan/code/driftbench/.venv/bin/python",
+    "app.py",
+    "--port",
+    "{port}"
+  ],
+  "test_command": [
+    "/Users/ayonaryan/code/driftbench/.venv/bin/python",
+    "-m",
+    "pytest",
+    "tests",
+    "-q"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "http-request": {
+    "method": "GET",
+    "path": "/users/1"
+  },
+  "http-response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "name": "Alice",
+      "email": "alice@example.com"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "http-request": {
+    "method": "POST",
+    "path": "/orders",
+    "body": {
+      "book_id": 1,
+      "quantity": 1
+    }
+  },
+  "http-response": {
+    "status": 201,
+    "body": {
+      "id": 1,
+      "book_id": 1,
+      "quantity": 1
+    }
+  }
+}

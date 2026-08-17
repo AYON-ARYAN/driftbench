@@ -1,0 +1,6 @@
+{
+  "task_id": "taskmanager-002",
+  "service": "taskmanager",
+  "task_type": "add_auth",
+  "difficulty": "medium"
+}

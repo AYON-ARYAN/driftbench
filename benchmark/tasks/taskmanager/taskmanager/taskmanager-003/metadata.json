@@ -1,0 +1,6 @@
+{
+  "task_id": "taskmanager-003",
+  "service": "taskmanager",
+  "task_type": "refactor",
+  "difficulty": "easy"
+}

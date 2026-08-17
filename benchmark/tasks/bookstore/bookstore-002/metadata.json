@@ -1,0 +1,19 @@
+{
+  "task_id": "bookstore-002",
+  "service": "bookstore",
+  "task_type": "add_pagination",
+  "difficulty": "medium",
+  "boot_command": [
+    "/Users/ayonaryan/code/driftbench/.venv/bin/python",
+    "app.py",
+    "--port",
+    "{port}"
+  ],
+  "test_command": [
+    "/Users/ayonaryan/code/driftbench/.venv/bin/python",
+    "-m",
+    "pytest",
+    "tests",
+    "-q"
+  ]
+}

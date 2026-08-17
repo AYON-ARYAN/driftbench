@@ -1,0 +1,97 @@
+openapi: 3.0.3
+info: {title: taskmanager, version: "1.0.0"}
+paths:
+  /tasks:
+    get:
+      parameters:
+        - {name: status, in: query, required: false, schema: {type: string}}
+        - {name: assignee_id, in: query, required: false, schema: {type: integer}}
+      responses:
+        "200":
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Task"}}}}
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/NewTask"}}}
+      responses:
+        "201":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Task"}}}
+        "400":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /tasks/{task_id}:
+    get:
+      parameters:
+        - {name: task_id, in: path, required: true, schema: {type: integer, example: 1}}
+      responses:
+        "200":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Task"}}}
+        "404":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /users:
+    get:
+      responses:
+        "200":
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/User"}}}}
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/NewUser"}}}
+      responses:
+        "201":
+          content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}
+        "400":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /users/{user_id}:
+    get:
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: integer, example: 1}}
+      responses:
+        "200":
+          content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}
+        "404":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+components:
+  schemas:
+    Task:
+      type: object
+      required: [id, title, description, status, assignee_id, due_date]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        description: {type: string}
+        status: {type: string}
+        assignee_id: {type: integer}
+        due_date: {type: string}
+    NewTask:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        title: {type: string}
+        description: {type: string}
+        status: {type: string}
+        assignee_id: {type: integer}
+        due_date: {type: string}
+    User:
+      type: object
+      required: [id, name, email]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        name: {type: string}
+        email: {type: string}
+    NewUser:
+      type: object
+      required: [name, email]
+      additionalProperties: false
+      properties:
+        name: {type: string}
+        email: {type: string}
+    Error:
+      type: object
+      required: [error, message]
+      additionalProperties: false
+      properties:
+        error: {type: string}
+        message: {type: string}

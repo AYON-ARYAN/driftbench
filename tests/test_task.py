@@ -3,7 +3,7 @@ import pytest
 from driftbench.task import Task, load_task, load_all_tasks, TASK_TYPES
 
 
-def _make_task(tmp_path, task_id="svc-001", task_type="refactor_no_interface_change"):
+def _make_task(tmp_path, task_id="svc-001", task_type="refactor_no_interface_change", boot_cmd=None, test_cmd=None):
     services = tmp_path / "services"
     (services / "svc").mkdir(parents=True, exist_ok=True)
     (services / "svc" / "app.py").write_text("# service\n")
@@ -14,13 +14,20 @@ def _make_task(tmp_path, task_id="svc-001", task_type="refactor_no_interface_cha
     (root / "acceptance_test.py").write_text("def test_x(): pass\n")
     (root / "oracle" / "spec.yaml").write_text("openapi: 3.0.0\n")
     (root / "oracle" / "specmatic.yaml").write_text("version: 3\n")
-    (root / "metadata.json").write_text(json.dumps({
+    
+    meta = {
         "task_id": task_id,
         "service": "svc",
         "task_type": task_type,
         "difficulty": "medium",
         "expected_drift_surface": ["D1", "D2"],
-    }))
+    }
+    if boot_cmd:
+        meta["boot_command"] = boot_cmd
+    if test_cmd:
+        meta["test_command"] = test_cmd
+        
+    (root / "metadata.json").write_text(json.dumps(meta))
     return root, services
 
 
@@ -30,6 +37,13 @@ def test_load_task_reads_metadata(tmp_path):
     assert task.task_id == "svc-001"
     assert task.service == "svc"
     assert task.difficulty == "medium"
+
+
+def test_load_task_reads_custom_commands(tmp_path):
+    root, services = _make_task(tmp_path, boot_cmd=["node", "app.js"], test_cmd=["npm", "test"])
+    task = load_task(root, services)
+    assert task.boot_command == ["node", "app.js"]
+    assert task.test_command == ["npm", "test"]
 
 
 def test_prompt_is_task_md_contents(tmp_path):

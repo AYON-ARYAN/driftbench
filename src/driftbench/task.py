@@ -26,6 +26,8 @@ class Task:
     difficulty: str
     root: Path
     services_dir: Path
+    boot_command: list[str] | None = None
+    test_command: list[str] | None = None
 
     @property
     def prompt(self) -> str:
@@ -67,6 +69,8 @@ def load_task(root: Path, services_dir: Path) -> Task:
         difficulty=meta["difficulty"],
         root=root,
         services_dir=Path(services_dir),
+        boot_command=meta.get("boot_command"),
+        test_command=meta.get("test_command"),
     )
 
     for required in (task.oracle_spec, task.oracle_config, task.acceptance_test):

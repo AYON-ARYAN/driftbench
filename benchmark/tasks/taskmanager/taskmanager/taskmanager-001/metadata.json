@@ -1,6 +1,0 @@
-{
-  "task_id": "taskmanager-001",
-  "service": "taskmanager",
-  "task_type": "add_endpoint",
-  "difficulty": "easy"
-}

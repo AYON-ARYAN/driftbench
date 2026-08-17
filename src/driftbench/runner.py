@@ -63,7 +63,7 @@ def execute_one(key: RunKey, task: Task, config: RunConfig, provider) -> dict:
 
     scaffold = run_agent(
         task=task, workspace=workspace, provider=provider, condition=condition,
-        seed=key.seed, test_command=config.test_command,
+        seed=key.seed, test_command=task.test_command or config.test_command,
     )
     record.update({
         "patch_applied": scaffold.patch_applied,
@@ -85,7 +85,7 @@ def execute_one(key: RunKey, task: Task, config: RunConfig, provider) -> dict:
 
     result = score(
         task=task, workspace=workspace, condition=condition, jar=config.jar,
-        boot_command=config.boot_command, report_dir=config.work_dir / slug / "reports",
+        boot_command=task.boot_command or config.boot_command, report_dir=config.work_dir / slug / "reports",
     )
     record.update({
         "acceptance_pass": result.acceptance_pass,

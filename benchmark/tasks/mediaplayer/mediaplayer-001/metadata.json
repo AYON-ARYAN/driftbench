@@ -1,0 +1,15 @@
+{
+  "task_id": "mediaplayer-001",
+  "service": "mediaplayer",
+  "task_type": "add_filter_param",
+  "difficulty": "easy",
+  "boot_command": [
+    "node",
+    "app.js",
+    "{port}"
+  ],
+  "test_command": [
+    "npm",
+    "test"
+  ]
+}

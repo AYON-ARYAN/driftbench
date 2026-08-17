@@ -1,0 +1,22 @@
+{
+  "http-request": {
+    "method": "GET",
+    "path": "/playlists/1"
+  },
+  "http-response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "name": "My Favorites",
+      "tracks": [
+        {
+          "id": 1,
+          "title": "So What",
+          "artist": "Miles Davis",
+          "genre": "Jazz",
+          "duration": 562
+        }
+      ]
+    }
+  }
+}

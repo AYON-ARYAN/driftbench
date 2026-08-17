@@ -1,0 +1,16 @@
+{
+  "http-request": {
+    "method": "GET",
+    "path": "/tracks/1"
+  },
+  "http-response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "title": "So What",
+      "artist": "Miles Davis",
+      "genre": "Jazz",
+      "duration": 562
+    }
+  }
+}

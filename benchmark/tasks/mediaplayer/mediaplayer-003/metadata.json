@@ -1,0 +1,15 @@
+{
+  "task_id": "mediaplayer-003",
+  "service": "mediaplayer",
+  "task_type": "refactor_no_interface_change",
+  "difficulty": "easy",
+  "boot_command": [
+    "node",
+    "app.js",
+    "{port}"
+  ],
+  "test_command": [
+    "npm",
+    "test"
+  ]
+}

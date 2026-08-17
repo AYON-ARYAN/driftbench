@@ -1,0 +1,15 @@
+{
+  "task_id": "mediaplayer-002",
+  "service": "mediaplayer",
+  "task_type": "add_pagination",
+  "difficulty": "medium",
+  "boot_command": [
+    "node",
+    "app.js",
+    "{port}"
+  ],
+  "test_command": [
+    "npm",
+    "test"
+  ]
+}

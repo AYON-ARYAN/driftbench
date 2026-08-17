@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info: {title: mediaplayer, version: "1.0.0"}
+paths:
+  /tracks:
+    get:
+      parameters:
+        - {name: artist, in: query, required: false, schema: {type: string}}
+        - {name: genre, in: query, required: false, schema: {type: string}}
+      responses:
+        "200":
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Track"}}}}
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/NewTrack"}}}
+      responses:
+        "201":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Track"}}}
+        "400":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /tracks/{track_id}:
+    get:
+      parameters:
+        - {name: track_id, in: path, required: true, schema: {type: integer, example: 1}}
+      responses:
+        "200":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Track"}}}
+        "404":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /playlists:
+    get:
+      responses:
+        "200":
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Playlist"}}}}
+    post:
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/NewPlaylist"}}}
+      responses:
+        "201":
+          content: {application/json: {schema: {$ref: "#/components/schemas/PlaylistDetail"}}}
+        "400":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /playlists/{playlist_id}:
+    get:
+      parameters:
+        - {name: playlist_id, in: path, required: true, schema: {type: integer, example: 1}}
+      responses:
+        "200":
+          content: {application/json: {schema: {$ref: "#/components/schemas/PlaylistDetail"}}}
+        "404":
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+components:
+  schemas:
+    Track:
+      type: object
+      required: [id, title, artist, genre, duration]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        artist: {type: string}
+        genre: {type: string}
+        duration: {type: integer}
+    NewTrack:
+      type: object
+      required: [title, artist, genre, duration]
+      additionalProperties: false
+      properties:
+        title: {type: string}
+        artist: {type: string}
+        genre: {type: string}
+        duration: {type: integer}
+    Playlist:
+      type: object
+      required: [id, name]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        name: {type: string}
+    NewPlaylist:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: {type: string}
+    PlaylistDetail:
+      type: object
+      required: [id, name, tracks]
+      additionalProperties: false
+      properties:
+        id: {type: integer}
+        name: {type: string}
+        tracks: {type: array, items: {$ref: "#/components/schemas/Track"}}
+    Error:
+      type: object
+      required: [error, message]
+      additionalProperties: false
+      properties:
+        error: {type: string}
+        message: {type: string}

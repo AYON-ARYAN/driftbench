@@ -13,7 +13,7 @@ from driftbench.patcher import (
 from driftbench.providers.base import ModelProvider, ProviderError
 from driftbench.task import Task
 from driftbench.testrunner import TestResult, run_tests
-from driftbench.workspace import AGENT_SPEC_FILENAME, Condition
+from driftbench.workspace import Condition
 
 MAX_REPAIRS = 3
 _SKIP_DIRS = {"__pycache__", ".git", "node_modules", ".pytest_cache", "db"}
@@ -26,14 +26,14 @@ change request and the current contents of the repository. Implement the change.
 Keep existing behaviour that the request does not ask you to change.
 """
 
-_SPEC_READONLY = f"""\
-The repository contains an OpenAPI specification at `{AGENT_SPEC_FILENAME}` \
+_SPEC_READONLY = """\
+The repository contains an OpenAPI specification at `openapi.yaml` \
 describing this service's public contract. Read it. You must not modify it — \
 the contract is fixed, and your implementation has to conform to it.
 """
 
-_SPEC_EDITABLE = f"""\
-The repository contains an OpenAPI specification at `{AGENT_SPEC_FILENAME}` \
+_SPEC_EDITABLE = """\
+The repository contains an OpenAPI specification at `openapi.yaml` \
 describing this service's public contract. You may read it, and you may edit it \
 if you judge that appropriate.
 """
@@ -104,10 +104,12 @@ def run_agent(
     error: str | None = None
 
     for iteration in range(1, max_repairs + 2):
+        print(f"  - Iteration {iteration}/{max_repairs + 1}: Querying {provider.model_id}...", flush=True)
         try:
             response = provider.complete(system, user, seed)
         except ProviderError as exc:
             transcript.append({"iteration": iteration, "error": str(exc)})
+            print(f"  - Iteration {iteration} failed on provider error: {exc}", flush=True)
             return ScaffoldResult(
                 patch_applied=applied_ever, iterations=iteration, changed_files=changed,
                 test_result=test_result, prompt_tokens=prompt_tokens,
@@ -121,6 +123,7 @@ def run_agent(
         files = parse_patch(response.text)
         if not files:
             error = "model produced no parseable file blocks"
+            print(f"  - Iteration {iteration}: Failed to parse file blocks from response.", flush=True)
             user = (
                 f"{user}\n\n# Your previous reply\n\n{response.text}\n\n"
                 f"# Problem\n\nNo file blocks were found. {PATCH_FORMAT_INSTRUCTIONS}"
@@ -129,8 +132,10 @@ def run_agent(
 
         try:
             changed = apply_patch(workspace, files)
+            print(f"  - Iteration {iteration}: Applied patch to {len(changed)} file(s): {changed}", flush=True)
         except PatchError as exc:
             error = str(exc)
+            print(f"  - Iteration {iteration}: Patch application failed: {exc}", flush=True)
             user = (
                 f"{user}\n\n# Your previous reply\n\n{response.text}\n\n"
                 f"# Problem\n\nThe patch was rejected: {exc}. "
@@ -142,8 +147,10 @@ def run_agent(
         error = None
         test_result = run_tests(workspace, test_command)
         if test_result.passed:
+            print("  - Iteration completed: Unit tests PASSED!", flush=True)
             break
 
+        print(f"  - Iteration completed: Unit tests FAILED (Returncode: {test_result.returncode})", flush=True)
         user = (
             f"{user}\n\n# Your previous reply\n\n{response.text}\n\n"
             f"# Test failures\n\n{test_result.feedback()}\n\n"
